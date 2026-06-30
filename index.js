@@ -41,6 +41,16 @@ app.get('/', (req, res) => {
   });
 });
 
+// ruta con informacion de la practica 
+app.get('/info', (req, res) => {
+  res.json({
+    materia: 'servicios web',
+    practica: 'API basica ',
+    descripcion: 'API basica en express con CRUD de usuarios',
+    servidor: 'ubuntu server '
+  });
+});
+
 // GET sin parámetros
 app.get('/usuarios', (req, res) => {
   res.status(200).json({
