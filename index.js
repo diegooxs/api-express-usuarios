@@ -2,13 +2,17 @@ const express = require('express');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+
 const Usuario = require('./models/Usuario');
 const Cliente = require('./models/Cliente');
 const Articulo = require('./models/Articulo');
 
 const app = express();
 const PORT = 3000;
-const JWT_SECRET = '12345'
+
+// Clave secreta para firmar y verificar el token JWT
+const JWT_SECRET = '12345';
+
 // Middleware para leer JSON
 app.use(express.json());
 
@@ -21,11 +25,12 @@ mongoose.connect('mongodb://127.0.0.1:27017/proyecto_api')
     console.error('Error al conectar con MongoDB:', error.message);
   });
 
-// Ruta principal
+// Ruta principal pública
 app.get('/', (req, res) => {
   res.json({
-    mensaje: 'API REST con Express, MongoDB y Mongoose funcionando',
+    mensaje: 'API REST con Express, MongoDB, Mongoose y JWT funcionando',
     recursos: {
+      login: '/login',
       usuarios: '/usuarios',
       clientes: '/clientes',
       articulos: '/articulos'
@@ -33,15 +38,15 @@ app.get('/', (req, res) => {
   });
 });
 
-// Ruta de información
+// Ruta de información pública
 app.get('/info', (req, res) => {
   res.json({
     materia: 'Desarrollo de Servicios Web',
-    practica: 'API REST con MongoDB y Mongoose',
-    descripcion: 'CRUD de usuarios, clientes y articulos',
+    practica: 'API REST con MongoDB, Mongoose, bcryptjs y JWT',
+    descripcion: 'CRUD de usuarios, clientes y articulos con rutas protegidas por token',
     baseDatos: 'MongoDB',
     orm: 'Mongoose',
-    seguridad: 'Password de usuarios hasheado con bcryptjs',
+    seguridad: 'Password hasheado con bcryptjs y autenticacion con JWT',
     servidor: 'Ubuntu Server'
   });
 });
@@ -141,9 +146,15 @@ function verificarToken(req, res, next) {
   }
 }
 
+/* ======================================================
+   CRUD USUARIOS
+   NOTA:
+   POST /usuarios queda público para poder crear usuarios.
+   GET, PUT y DELETE quedan protegidos con JWT.
+====================================================== */
 
-// GET todos los usuarios
-app.get('/usuarios', async (req, res) => {
+// GET todos los usuarios - PROTEGIDO
+app.get('/usuarios', verificarToken, async (req, res) => {
   try {
     const usuarios = await Usuario.find();
 
@@ -160,8 +171,8 @@ app.get('/usuarios', async (req, res) => {
   }
 });
 
-// GET usuario por ID
-app.get('/usuarios/:id', async (req, res) => {
+// GET usuario por ID - PROTEGIDO
+app.get('/usuarios/:id', verificarToken, async (req, res) => {
   try {
     const usuario = await Usuario.findById(req.params.id);
 
@@ -183,7 +194,7 @@ app.get('/usuarios/:id', async (req, res) => {
   }
 });
 
-// POST crear usuario con password hasheado
+// POST crear usuario con password hasheado - PÚBLICO
 app.post('/usuarios', async (req, res) => {
   try {
     const { usuario, nombre, password, rol } = req.body;
@@ -224,8 +235,8 @@ app.post('/usuarios', async (req, res) => {
   }
 });
 
-// PUT actualizar usuario con password hasheado
-app.put('/usuarios/:id', async (req, res) => {
+// PUT actualizar usuario con password hasheado - PROTEGIDO
+app.put('/usuarios/:id', verificarToken, async (req, res) => {
   try {
     const { usuario, nombre, password, rol } = req.body;
 
@@ -276,8 +287,8 @@ app.put('/usuarios/:id', async (req, res) => {
   }
 });
 
-// DELETE eliminar usuario
-app.delete('/usuarios/:id', async (req, res) => {
+// DELETE eliminar usuario - PROTEGIDO
+app.delete('/usuarios/:id', verificarToken, async (req, res) => {
   try {
     const usuarioEliminado = await Usuario.findByIdAndDelete(req.params.id);
 
@@ -299,9 +310,13 @@ app.delete('/usuarios/:id', async (req, res) => {
   }
 });
 
+/* ======================================================
+   CRUD CLIENTES
+   TODAS LAS RUTAS ESTÁN PROTEGIDAS CON JWT
+====================================================== */
 
-// GET todos los clientes
-app.get('/clientes', async (req, res) => {
+// GET todos los clientes - PROTEGIDO
+app.get('/clientes', verificarToken, async (req, res) => {
   try {
     const clientes = await Cliente.find();
 
@@ -318,8 +333,8 @@ app.get('/clientes', async (req, res) => {
   }
 });
 
-// GET cliente por ID
-app.get('/clientes/:id', async (req, res) => {
+// GET cliente por ID - PROTEGIDO
+app.get('/clientes/:id', verificarToken, async (req, res) => {
   try {
     const cliente = await Cliente.findById(req.params.id);
 
@@ -341,8 +356,8 @@ app.get('/clientes/:id', async (req, res) => {
   }
 });
 
-// POST crear cliente
-app.post('/clientes', async (req, res) => {
+// POST crear cliente - PROTEGIDO
+app.post('/clientes', verificarToken, async (req, res) => {
   try {
     const { nombre, correo, telefono, direccion } = req.body;
 
@@ -379,8 +394,8 @@ app.post('/clientes', async (req, res) => {
   }
 });
 
-// PUT actualizar cliente
-app.put('/clientes/:id', async (req, res) => {
+// PUT actualizar cliente - PROTEGIDO
+app.put('/clientes/:id', verificarToken, async (req, res) => {
   try {
     const { nombre, correo, telefono, direccion } = req.body;
 
@@ -428,8 +443,8 @@ app.put('/clientes/:id', async (req, res) => {
   }
 });
 
-// DELETE eliminar cliente
-app.delete('/clientes/:id', async (req, res) => {
+// DELETE eliminar cliente - PROTEGIDO
+app.delete('/clientes/:id', verificarToken, async (req, res) => {
   try {
     const clienteEliminado = await Cliente.findByIdAndDelete(req.params.id);
 
@@ -451,10 +466,13 @@ app.delete('/clientes/:id', async (req, res) => {
   }
 });
 
+/* ======================================================
+   CRUD ARTICULOS
+   TODAS LAS RUTAS ESTÁN PROTEGIDAS CON JWT
+====================================================== */
 
-
-// GET todos los articulos
-app.get('/articulos', async (req, res) => {
+// GET todos los articulos - PROTEGIDO
+app.get('/articulos', verificarToken, async (req, res) => {
   try {
     const articulos = await Articulo.find();
 
@@ -471,8 +489,8 @@ app.get('/articulos', async (req, res) => {
   }
 });
 
-// GET articulo por ID
-app.get('/articulos/:id', async (req, res) => {
+// GET articulo por ID - PROTEGIDO
+app.get('/articulos/:id', verificarToken, async (req, res) => {
   try {
     const articulo = await Articulo.findById(req.params.id);
 
@@ -494,8 +512,8 @@ app.get('/articulos/:id', async (req, res) => {
   }
 });
 
-// POST crear articulo
-app.post('/articulos', async (req, res) => {
+// POST crear articulo - PROTEGIDO
+app.post('/articulos', verificarToken, async (req, res) => {
   try {
     const { nombre, descripcion, precio, stock, categoria } = req.body;
 
@@ -527,8 +545,8 @@ app.post('/articulos', async (req, res) => {
   }
 });
 
-// PUT actualizar articulo
-app.put('/articulos/:id', async (req, res) => {
+// PUT actualizar articulo - PROTEGIDO
+app.put('/articulos/:id', verificarToken, async (req, res) => {
   try {
     const { nombre, descripcion, precio, stock, categoria } = req.body;
 
@@ -571,8 +589,8 @@ app.put('/articulos/:id', async (req, res) => {
   }
 });
 
-// DELETE eliminar articulo
-app.delete('/articulos/:id', async (req, res) => {
+// DELETE eliminar articulo - PROTEGIDO
+app.delete('/articulos/:id', verificarToken, async (req, res) => {
   try {
     const articuloEliminado = await Articulo.findByIdAndDelete(req.params.id);
 
