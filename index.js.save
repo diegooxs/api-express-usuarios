@@ -1,14 +1,12 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const Usuario = require('./models/Usuario');
 const Cliente = require('./models/Cliente');
 const Articulo = require('./models/Articulo');
 
 const app = express();
 const PORT = 3000;
-const JWT_SECRET = '12345'
+
 // Middleware para leer JSON
 app.use(express.json());
 
@@ -38,109 +36,16 @@ app.get('/info', (req, res) => {
   res.json({
     materia: 'Desarrollo de Servicios Web',
     practica: 'API REST con MongoDB y Mongoose',
-    descripcion: 'CRUD de usuarios, clientes y articulos',
-    baseDatos: 'MongoDB',
+    descripcion: 'CRUD de usuarios, clientes y artículos',
+    baseDeDatos: 'MongoDB',
     orm: 'Mongoose',
-    seguridad: 'Password de usuarios hasheado con bcryptjs',
     servidor: 'Ubuntu Server'
   });
 });
 
 /* ======================================================
-   LOGIN CON JWT
+   CRUD USUARIOS
 ====================================================== */
-
-app.post('/login', async (req, res) => {
-  try {
-    const { usuario, password } = req.body;
-
-    if (!usuario || !password) {
-      return res.status(400).json({
-        mensaje: 'Debes enviar usuario y password'
-      });
-    }
-
-    // Buscar usuario en MongoDB
-    const usuarioEncontrado = await Usuario.findOne({ usuario: usuario });
-
-    if (!usuarioEncontrado) {
-      return res.status(401).json({
-        mensaje: 'Usuario o password incorrectos'
-      });
-    }
-
-    // Comparar password enviada con password hasheada
-    const passwordValido = await bcrypt.compare(password, usuarioEncontrado.password);
-
-    if (!passwordValido) {
-      return res.status(401).json({
-        mensaje: 'Usuario o password incorrectos'
-      });
-    }
-
-    // Crear token con tiempo de vida de 2 minutos
-    const token = jwt.sign(
-      {
-        id: usuarioEncontrado._id,
-        usuario: usuarioEncontrado.usuario,
-        rol: usuarioEncontrado.rol
-      },
-      JWT_SECRET,
-      {
-        expiresIn: '2m'
-      }
-    );
-
-    res.status(200).json({
-      mensaje: 'Inicio de sesion correcto',
-      token: token,
-      tipo: 'Bearer',
-      expiraEn: '2 minutos'
-    });
-
-  } catch (error) {
-    res.status(500).json({
-      mensaje: 'Error en login',
-      error: error.message
-    });
-  }
-});
-
-/* ======================================================
-   MIDDLEWARE PARA VERIFICAR JWT
-====================================================== */
-
-function verificarToken(req, res, next) {
-  const authHeader = req.headers['authorization'];
-
-  if (!authHeader) {
-    return res.status(401).json({
-      mensaje: 'Token no proporcionado'
-    });
-  }
-
-  const token = authHeader.split(' ')[1];
-
-  if (!token) {
-    return res.status(401).json({
-      mensaje: 'Formato de token invalido. Usa Bearer TOKEN'
-    });
-  }
-
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-
-    req.usuario = decoded;
-
-    next();
-  } catch (error) {
-    return res.status(403).json({
-      mensaje: 'Token invalido o expirado',
-      error: error.message
-    });
-  }
-}
-
 
 // GET todos los usuarios
 app.get('/usuarios', async (req, res) => {
@@ -177,13 +82,13 @@ app.get('/usuarios/:id', async (req, res) => {
     });
   } catch (error) {
     res.status(400).json({
-      mensaje: 'ID de usuario invalido',
+      mensaje: 'ID de usuario inválido',
       error: error.message
     });
   }
 });
 
-// POST crear usuario con password hasheado
+// POST crear usuario
 app.post('/usuarios', async (req, res) => {
   try {
     const { usuario, nombre, password, rol } = req.body;
@@ -194,14 +99,11 @@ app.post('/usuarios', async (req, res) => {
       });
     }
 
-    // Hashear/encriptar password antes de guardar
-    const passwordHasheado = await bcrypt.hash(password, 10);
-
     const nuevoUsuario = new Usuario({
-      usuario: usuario,
-      nombre: nombre,
-      password: passwordHasheado,
-      rol: rol
+      usuario,
+      nombre,
+      password,
+      rol
     });
 
     const usuarioGuardado = await nuevoUsuario.save();
@@ -213,7 +115,7 @@ app.post('/usuarios', async (req, res) => {
   } catch (error) {
     if (error.code === 11000) {
       return res.status(409).json({
-        mensaje: 'Ese usuario ya existe'
+        mensaje: 'Ese nombre de usuario ya existe'
       });
     }
 
@@ -224,7 +126,7 @@ app.post('/usuarios', async (req, res) => {
   }
 });
 
-// PUT actualizar usuario con password hasheado
+// PUT actualizar usuario
 app.put('/usuarios/:id', async (req, res) => {
   try {
     const { usuario, nombre, password, rol } = req.body;
@@ -235,16 +137,13 @@ app.put('/usuarios/:id', async (req, res) => {
       });
     }
 
-    // Hashear/encriptar nueva password antes de actualizar
-    const passwordHasheado = await bcrypt.hash(password, 10);
-
     const usuarioActualizado = await Usuario.findByIdAndUpdate(
       req.params.id,
       {
-        usuario: usuario,
-        nombre: nombre,
-        password: passwordHasheado,
-        rol: rol
+        usuario,
+        nombre,
+        password,
+        rol
       },
       {
         new: true,
@@ -265,7 +164,7 @@ app.put('/usuarios/:id', async (req, res) => {
   } catch (error) {
     if (error.code === 11000) {
       return res.status(409).json({
-        mensaje: 'Ese usuario ya existe'
+        mensaje: 'Ese nombre de usuario ya existe'
       });
     }
 
@@ -299,6 +198,9 @@ app.delete('/usuarios/:id', async (req, res) => {
   }
 });
 
+/* ======================================================
+   CRUD CLIENTES
+====================================================== */
 
 // GET todos los clientes
 app.get('/clientes', async (req, res) => {
@@ -335,7 +237,7 @@ app.get('/clientes/:id', async (req, res) => {
     });
   } catch (error) {
     res.status(400).json({
-      mensaje: 'ID de cliente invalido',
+      mensaje: 'ID de cliente inválido',
       error: error.message
     });
   }
@@ -353,10 +255,10 @@ app.post('/clientes', async (req, res) => {
     }
 
     const nuevoCliente = new Cliente({
-      nombre: nombre,
-      correo: correo,
-      telefono: telefono,
-      direccion: direccion
+      nombre,
+      correo,
+      telefono,
+      direccion
     });
 
     const clienteGuardado = await nuevoCliente.save();
@@ -368,7 +270,7 @@ app.post('/clientes', async (req, res) => {
   } catch (error) {
     if (error.code === 11000) {
       return res.status(409).json({
-        mensaje: 'Ese correo ya esta registrado'
+        mensaje: 'Ese correo ya está registrado'
       });
     }
 
@@ -393,10 +295,10 @@ app.put('/clientes/:id', async (req, res) => {
     const clienteActualizado = await Cliente.findByIdAndUpdate(
       req.params.id,
       {
-        nombre: nombre,
-        correo: correo,
-        telefono: telefono,
-        direccion: direccion
+        nombre,
+        correo,
+        telefono,
+        direccion
       },
       {
         new: true,
@@ -417,7 +319,7 @@ app.put('/clientes/:id', async (req, res) => {
   } catch (error) {
     if (error.code === 11000) {
       return res.status(409).json({
-        mensaje: 'Ese correo ya esta registrado'
+        mensaje: 'Ese correo ya está registrado'
       });
     }
 
@@ -451,50 +353,52 @@ app.delete('/clientes/:id', async (req, res) => {
   }
 });
 
+/* ======================================================
+   CRUD ARTICULOS
+====================================================== */
 
-
-// GET todos los articulos
+// GET todos los artículos
 app.get('/articulos', async (req, res) => {
   try {
     const articulos = await Articulo.find();
 
     res.status(200).json({
-      mensaje: 'Listado de articulos',
+      mensaje: 'Listado de artículos',
       total: articulos.length,
       articulos: articulos
     });
   } catch (error) {
     res.status(500).json({
-      mensaje: 'Error al obtener articulos',
+      mensaje: 'Error al obtener artículos',
       error: error.message
     });
   }
 });
 
-// GET articulo por ID
+// GET artículo por ID
 app.get('/articulos/:id', async (req, res) => {
   try {
     const articulo = await Articulo.findById(req.params.id);
 
     if (!articulo) {
       return res.status(404).json({
-        mensaje: 'Articulo no encontrado'
+        mensaje: 'Artículo no encontrado'
       });
     }
 
     res.status(200).json({
-      mensaje: 'Articulo encontrado',
+      mensaje: 'Artículo encontrado',
       articulo: articulo
     });
   } catch (error) {
     res.status(400).json({
-      mensaje: 'ID de articulo invalido',
+      mensaje: 'ID de artículo inválido',
       error: error.message
     });
   }
 });
 
-// POST crear articulo
+// POST crear artículo
 app.post('/articulos', async (req, res) => {
   try {
     const { nombre, descripcion, precio, stock, categoria } = req.body;
@@ -506,28 +410,28 @@ app.post('/articulos', async (req, res) => {
     }
 
     const nuevoArticulo = new Articulo({
-      nombre: nombre,
-      descripcion: descripcion,
-      precio: precio,
-      stock: stock,
-      categoria: categoria
+      nombre,
+      descripcion,
+      precio,
+      stock,
+      categoria
     });
 
     const articuloGuardado = await nuevoArticulo.save();
 
     res.status(201).json({
-      mensaje: 'Articulo creado correctamente',
+      mensaje: 'Artículo creado correctamente',
       articulo: articuloGuardado
     });
   } catch (error) {
     res.status(500).json({
-      mensaje: 'Error al crear articulo',
+      mensaje: 'Error al crear artículo',
       error: error.message
     });
   }
 });
 
-// PUT actualizar articulo
+// PUT actualizar artículo
 app.put('/articulos/:id', async (req, res) => {
   try {
     const { nombre, descripcion, precio, stock, categoria } = req.body;
@@ -541,11 +445,11 @@ app.put('/articulos/:id', async (req, res) => {
     const articuloActualizado = await Articulo.findByIdAndUpdate(
       req.params.id,
       {
-        nombre: nombre,
-        descripcion: descripcion,
-        precio: precio,
-        stock: stock,
-        categoria: categoria
+        nombre,
+        descripcion,
+        precio,
+        stock,
+        categoria
       },
       {
         new: true,
@@ -555,40 +459,40 @@ app.put('/articulos/:id', async (req, res) => {
 
     if (!articuloActualizado) {
       return res.status(404).json({
-        mensaje: 'Articulo no encontrado'
+        mensaje: 'Artículo no encontrado'
       });
     }
 
     res.status(200).json({
-      mensaje: 'Articulo actualizado correctamente',
+      mensaje: 'Artículo actualizado correctamente',
       articulo: articuloActualizado
     });
   } catch (error) {
     res.status(400).json({
-      mensaje: 'Error al actualizar articulo',
+      mensaje: 'Error al actualizar artículo',
       error: error.message
     });
   }
 });
 
-// DELETE eliminar articulo
+// DELETE eliminar artículo
 app.delete('/articulos/:id', async (req, res) => {
   try {
     const articuloEliminado = await Articulo.findByIdAndDelete(req.params.id);
 
     if (!articuloEliminado) {
       return res.status(404).json({
-        mensaje: 'Articulo no encontrado'
+        mensaje: 'Artículo no encontrado'
       });
     }
 
     res.status(200).json({
-      mensaje: 'Articulo eliminado correctamente',
+      mensaje: 'Artículo eliminado correctamente',
       articuloEliminado: articuloEliminado
     });
   } catch (error) {
     res.status(400).json({
-      mensaje: 'Error al eliminar articulo',
+      mensaje: 'Error al eliminar artículo',
       error: error.message
     });
   }
@@ -598,3 +502,4 @@ app.delete('/articulos/:id', async (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Servidor corriendo en el puerto ${PORT}`);
 });
+
