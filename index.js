@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const cors = require('cors');
 
 const Usuario = require('./models/Usuario');
 const Cliente = require('./models/Cliente');
@@ -12,6 +13,23 @@ const PORT = 3000;
 
 // Clave secreta para firmar y verificar el token JWT
 const JWT_SECRET = '12345';
+
+// ======================================================
+//  INTERRUPTOR DE CORS (practica de CORS)
+//  false = SIN cors  -> el navegador BLOQUEA las peticiones
+//                        que vengan de otro origen (ej: React en :5173)
+//  true  = CON cors  -> el navegador PERMITE esas peticiones
+//  Cambia este valor y REINICIA el servidor para ver el antes/despues.
+//  (Postman NO aplica CORS, por eso siempre funciona en Postman)
+// ======================================================
+const USAR_CORS = true;
+
+if (USAR_CORS) {
+  app.use(cors()); // habilita CORS para cualquier origen (demo)
+  console.log('CORS HABILITADO -> el navegador SI permite peticiones desde otro origen');
+} else {
+  console.log('CORS DESHABILITADO -> el navegador BLOQUEARA peticiones desde otro origen');
+}
 
 // Middleware para leer JSON
 app.use(express.json());

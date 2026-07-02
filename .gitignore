@@ -1,3 +1,7 @@
 node_modules
 .env
 
+# capturas y scripts de prueba (no son parte de la practica)
+capturas
+capturas.mjs
+capturas-evidencia.mjs
