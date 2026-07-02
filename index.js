@@ -22,7 +22,7 @@ const JWT_SECRET = '12345';
 //  Cambia este valor y REINICIA el servidor para ver el antes/despues.
 //  (Postman NO aplica CORS, por eso siempre funciona en Postman)
 // ======================================================
-const USAR_CORS = true;
+const USAR_CORS = false;
 
 if (USAR_CORS) {
   app.use(cors()); // habilita CORS para cualquier origen (demo)
